@@ -6,6 +6,7 @@
 (def ^:dynamic *data* (data/read-data))
 
 (defn- one-of? [str candidates]
+  (println ">> (one-of str=" str " candidates=" candidates ")")
   (some (fn [candidate] (= (upper-case str) (upper-case candidate))) candidates))
 
 (defn- filter-by-numbers [numbers lines]
@@ -136,7 +137,13 @@
 
 ;; The public API function
 
+;;TODO implement setting :time to now if not present in request
+;;TODO implement setting :weekday to this day if not present in request
+;;TODO support alternative :weekday representations (than ma ti ke to pe la su)
 (defn buses [request]
+  *data*
+  request
   (buses-for (select-keys request
                           [:numbers :from-centre :destination :weekday :time :within :bus-count])
-             *data*))
+             *data*)
+  )
