@@ -40,7 +40,7 @@
 ;; buses-for
 ;;-----------------------------------------------
 
-(def buses-for (ns-resolve 'bus-jkl.core 'buses-for))
+;;(def buses-for (ns-resolve 'bus-jkl.core 'buses-for))
 
 (def found-line-data-one-line
   [{:number 27
@@ -97,9 +97,8 @@
                {:day ["la" "su"]
                 :buses [{:time "08:00"}{:time "10:00"}{:time "10:30"}]}]}])
 
-;; test that search from several lines work
-;; test that each result "row" has all the metadata like title, districts etc
 
+;; TODO test that each result "row" has all the metadata like title, districts etc
 
 (fact (str "Returns all buses from time onwards for the correct schedule "
            "when when 1 line explicitly defined in request "
@@ -136,10 +135,21 @@
           {:number 99 :time "10:30"}
           {:number 12 :time "12:00"}))
 
+(fact (str "Empty request returns empty vector")
+      (buses-for {}
+                 found-line-data-many-lines)
+      => [])
+
+(fact (str "Request with only irrelevant key-vals returns empty vector")
+      (buses-for {:foo "lorem"
+                  :bar "ipsum"}
+                 found-line-data-many-lines)
+      => [])
+
 
 
 ;; ;; TODO test that the day(s) given in request match the results
-;; [x]      Ie. implement filtering buses by the day.
+
 ;; [ ]      If no day given in request, approve all otherwise matching buses
 
 ;; ;; SUB-TODOS for the above ;)
@@ -159,10 +169,20 @@
 ;;           {:number 27 :time "07:05"}))
 
 ;;-----------------------------------------------
+;; invalid-request?
+;;-----------------------------------------------
+
+(fact (str "invalid-request? returns true given empty request map")
+      (invalid-request? {}) => true)
+
+(fact (str "invalid-request? returns true given request map with irrelevant keys")
+      (invalid-request? {:foo "a" :bar "b"}) => true)
+
+;;-----------------------------------------------
 ;; times-from-line
 ;;-----------------------------------------------
 
-(def times-from-line (ns-resolve 'bus-jkl.core 'times-from-line))
+;;(def times-from-line (ns-resolve 'bus-jkl.core 'times-from-line))
 
 (let [line-data [{:time "05:35"}
                  {:time "06:35"}
@@ -242,7 +262,7 @@
 ;; mins-from-midnight
 ;;-----------------------------------------------
 
-(def mins-from-midnight (ns-resolve 'bus-jkl.core 'mins-from-midnight))
+;;(def mins-from-midnight (ns-resolve 'bus-jkl.core 'mins-from-midnight))
 
 (fact "Returns nil for non-number"
       (mins-from-midnight "foo") => nil?)
@@ -268,7 +288,7 @@
 ;; lines-for
 ;;-----------------------------------------------
 
-(def lines-for (ns-resolve 'bus-jkl.core 'lines-for))
+;;(def lines-for (ns-resolve 'bus-jkl.core 'lines-for))
 
 (def line-data [{:number 1
             :title ["Keskusta" "Oz"]
@@ -284,6 +304,10 @@
             :route [{:stop "foo street"}]}])
 
 ;; When :from-centre not given
+
+(fact "Empty request returns all lines"
+      (lines-for {} line-data)
+      => (contains-maps-having {:number 1}{:number 2}{:number 3}))
 
 (fact "Finds 1 line when only one number given"
       (lines-for {:numbers [3]} line-data)
@@ -412,3 +436,46 @@
       (lines-for {:weekday "la"} day-check-line-data)
       => (contains-maps-having
           {:number 2}{:number 3}))
+
+;; (def data
+;;   [{:number 27
+;;     :title ["Kauppatori" "Mustalampi"]
+;;     :valid ["03.06.2013" "08.08.2013"]
+;;     :districts ["HEIKKILÄ" "KAUPPATORI" "KELTINMÄKI" "MUSTALAMPI"]
+;;     :route [{:stop "Foo street"}]
+;;     :schedule [{:day ["ma" "ti" "ke" "to" "pe"]
+;;                 :buses [{:time "08:00"}{:time "10:00"}]}]}
+;;    {:number 12
+;;     :title ["Keskusta" "Keltinmäki"]
+;;     :valid ["03.06.2013" "08.08.2013"]
+;;     :districts ["KAUPPATORI" "KELTINMÄKI"]
+;;     :route [{:stop "Bar street"}]
+;;     :schedule [{:day ["pe" "la" "su"]
+;;                 :buses [{:time "08:15"}{:time "12:00"}]}]}
+;;    {:number 99
+;;     :title ["Oz" "Keskusta"]
+;;     :valid ["03.06.2013" "08.08.2013"]
+;;     :districts ["HOLLYWOOD" "KESKUSTA"]
+;;     :route [{:stop "Hill street"}]
+;;     :schedule [{:day ["ma" "ti" "ke"]
+;;                 :buses [{:time "09:00"}{:time "11:00"}]}
+;;                {:day ["la" "su"]
+;;                 :buses [{:time "08:00"}{:time "10:00"}{:time "10:30"}]}]}])
+
+;; (def data-
+;;   [{:number 27
+;;     :title ["Kauppatori" "Mustalampi"]
+;;     :valid ["03.06.2013" "08.08.2013"]
+;;     :districts ["HEIKKILÄ" "KAUPPATORI" "KELTINMÄKI" "MUSTALAMPI"]
+;;     :route [{:stop "Mustalammentie"}]
+;;     :schedule [{:day ["ma" "ti" "ke" "to" "pe"]
+;;                 :buses [{:time "08:05"}]}
+;;                {:day ["la"]
+;;                 :buses [{:time "08:35" :info ["ajetaan Keltinmäkeen"]}]}
+;;                {:day ["su"]
+;;                 :buses [{:time "23:05"}]}]}])
+
+;; (fact (str "Returns the valid lines when some line has several schedules"
+;;            "and weekday found not found in first schedule")
+;;   (buses-for {} data-)
+;;   => [])

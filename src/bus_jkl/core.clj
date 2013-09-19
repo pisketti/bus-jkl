@@ -1,22 +1,26 @@
 (ns bus-jkl.core
   (:use [clojure.string :only [split upper-case]]
-        [clojure.pprint :only [pprint]])
-  (:require [bus-jkl.data :as data]))
+        [clojure.pprint :only [pprint]]
+        [clojure.tools.trace])
+  (:require [bus-jkl.data :as data]
+            [clojure.set :as set]))
 
 (def ^:dynamic *data* (data/read-data))
 
-(defn- one-of? [str candidates]
-  (println ">> (one-of str=" str " candidates=" candidates ")")
-  (some (fn [candidate] (= (upper-case str) (upper-case candidate))) candidates))
+(defn one-of? [str candidates]
+  ;;(println ">> (one-of str=" str " candidates=" candidates ")")
+  (when str (some (fn [candidate]
+                    (= (upper-case str) (when candidate (upper-case candidate))))
+                  candidates)))
 
-(defn- filter-by-numbers [numbers lines]
+(defn filter-by-numbers [numbers lines]
   (filter (fn [line]
             (if numbers
               ((set numbers) (:number line))
               true))
           lines))
 
-(defn- filter-by-from-centre [from-centre lines]
+(defn filter-by-from-centre [from-centre lines]
   (filter (fn [{:keys [title] :as line}]
             (let [line-from-centre (one-of? (first title)
                                             ["keskusta" "kauppatori"])]
@@ -26,7 +30,7 @@
                :else true))) ;; do not drop lines if from-centre not set
           lines))
 
-(defn- filter-by-destination [destination lines]
+(defn filter-by-destination [destination lines]
   "Filters lines by destination. Checks title, districts and route.
    Skips the first in each since destination cannot be where the travelling starts."
   (if-not destination
@@ -46,7 +50,7 @@
         (pprint x))
       returnable))
 
-(defn- filter-by-weekday [weekday lines]
+(defn filter-by-weekday [weekday lines]
   "Filters lines by weekday. Accepts all lines if weekday not given in request."
   (if-not weekday
     lines
@@ -57,32 +61,33 @@
      lines)))
 
 
-(defn- lines-for [{:keys [numbers from-centre destination weekday] :as request} data]
-  (->> data
-       (filter-by-numbers numbers)
-       (filter-by-from-centre from-centre)
-       (filter-by-destination destination)
-       (filter-by-weekday weekday)))
+(defn lines-for [{:keys [numbers from-centre destination weekday] :as request} data]
+  (when (and request data)
+       (->> data
+            (filter-by-numbers numbers)
+            (filter-by-from-centre from-centre)
+            (filter-by-destination destination)
+            (filter-by-weekday weekday))))
 
-(defn- parse-int [str]
+(defn parse-int [str]
   (try
     (Integer. (re-find #"[0-9]*" str))
     (catch Exception e nil)))
 
-(defn- mins-from-midnight [time-str]
+(defn mins-from-midnight [time-str]
   (let [[hours-str mins-str] (split time-str #":")
         mins (parse-int mins-str)
         hours (parse-int hours-str)]
     (if (and mins hours)
       (+ (* 60 hours) mins))))
 
-(defn- earlier-than [max-time]
+(defn earlier-than [max-time]
   "Returns a function that checks whether a given time is before the max time"
   (let [max-mins (mins-from-midnight max-time)]
     (fn [{:keys [time]}]
       (< (mins-from-midnight time) max-mins))))
 
-(defn- within-time [now within-mins]
+(defn within-time [now within-mins]
   (let [max-mins (+ (mins-from-midnight now) within-mins)]
     (fn [{:keys [time]}]
       (< (mins-from-midnight time) max-mins))))
@@ -90,7 +95,7 @@
 (defn limit-by-count [count buses]
   (if count (take count buses) buses))
 
-(defn- times-from-line [{:keys [time bus-count within]} line-data]
+(defn times-from-line [{:keys [time bus-count within]} line-data]
   "Filteres the lines that match the request from all lines"
   (let [drop-earlier-buses (fn [time buses] (drop-while (earlier-than time) buses))
         limit-by-time (fn [from-time within buses]
@@ -101,39 +106,45 @@
          (limit-by-time time within))))
 
 ;; Needed only if support for :date in request will be implemented
-;; (defn- weekday-for [date]
+;; (defn weekday-for [date]
 ;;   nil)
 
-(defn- get-valid-buses-for [weekday schedule]
+(defn get-valid-buses-for [weekday schedule]
   (some (fn [{:keys [day buses]}] (when (one-of? weekday day) buses))
                  schedule))
 
-(defn- add-metadata-from [matching-line]
+(defn add-metadata-from [matching-line]
   (fn [bus]
     (merge bus
            (select-keys matching-line [:number :title :valid :districts :route]))))
 
-(defn- compare-time [time-str-1 time-str-2]
+(defn compare-time [time-str-1 time-str-2]
   (< (mins-from-midnight time-str-1) (mins-from-midnight time-str-2)))
 
-(defn- buses-from-lines [{:keys [weekday] :as request} lines]
+(defn buses-from-lines [{:keys [weekday] :as request} lines]
   (for [{:keys [schedule] :as line} lines
         :let [buses (get-valid-buses-for weekday schedule)
               matching-buses (times-from-line request buses)]]
     (map (add-metadata-from line) matching-buses)))
 
-(defn- sort-by-time [buses-with-metadata]
+(defn sort-by-time [buses-with-metadata]
   (sort-by :time compare-time buses-with-metadata))
 
-(defn- buses-for [{:keys [weekday buscount] :as request} lines]
-  (->> lines
-       (lines-for request)
-       (buses-from-lines request)
-       flatten
-       sort-by-time
-       (limit-by-count buscount)
-       ;;(prn-ret "\nresult: ")
-       ))
+(defn invalid-request? [request]
+  (let [supported-query-args [:numbers :from-centre :destination :weekday :time :within :bus-count]]
+    (empty? (set/intersection (set (keys request)) (set supported-query-args)))))
+
+(defn buses-for [{:keys [weekday buscount] :as request} lines]
+  (if (invalid-request? request)
+    []
+    (->> lines
+         (lines-for request)
+         (buses-from-lines request)
+         flatten
+         sort-by-time
+         (limit-by-count buscount)
+         ;;(prn-ret "\nresult: ")
+         )))
 
 ;; The public API function
 

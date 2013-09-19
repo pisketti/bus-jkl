@@ -18,7 +18,7 @@
             {:stop "Keltinmäki"}
             {:stop "Mäyrämäentie"}
             {:stop "Mustalammentie"}]
-    :schedule [{:weekday ["ma" "ti" "ke" "to" "pe"]
+    :schedule [{:day ["ma" "ti" "ke" "to" "pe"]
                 :buses
                 [{:time "05:35"}
                  {:time "06:35"}
@@ -42,7 +42,7 @@
                  {:time "24:05" :info ["Rautpohjankadun, Keljon ja Myllyjärven kautta"]}
                  {:time "01:05" :info ["Rautpohjankadun, Keljon ja Myllyjärven kautta"
                                        "perjantaisin"]}]}
-               {:weekday ["la"]
+               {:day ["la"]
                 :buses
                 [{:time "06:35" :info ["Rautpohjankadun, Keljon ja Myllyjärven kautta"
                                        "poikkeaa keskussairaalalla"]}
@@ -66,7 +66,7 @@
                  {:time "23:05" :info ["Rautpohjankadun, Keljon ja Myllyjärven kautta"]}
                  {:time "24:05" :info ["Rautpohjankadun, Keljon ja Myllyjärven kautta"]}
                  {:time "01:05" :info ["Rautpohjankadun, Keljon ja Myllyjärven kautta"]}]}
-               {:weekday ["su"]
+               {:day ["su"]
                 :buses
                 [{:time "06:35" :info ["Rautpohjankadun, Keljon ja Myllyjärven kautta"
                                        "poikkeaa keskussairaalalla"]}
