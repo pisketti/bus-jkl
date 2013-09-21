@@ -2,7 +2,9 @@
   (:use clojure.test
         bus-jkl.core
         midje.sweet)
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set]
+            [clj-time.core :as ctc]
+            [clj-time.format :as ctf]))
 
 ;; Test utils
 
@@ -176,16 +178,36 @@
       => [])
 
 ;;-----------------------------------------------
-;; invalid-request?
+;; valid-request?
 ;;-----------------------------------------------
 
-(def invalid-request? (ns-resolve 'bus-jkl.core 'invalid-request?))
+(def valid-request? (ns-resolve 'bus-jkl.core 'valid-request?))
 
-(fact (str "invalid-request? returns true given empty request map")
-      (invalid-request? {}) => true)
+(fact "valid-request? returns falsey given empty request map"
+      (valid-request? {}) => falsey)
 
-(fact (str "invalid-request? returns true given request map with irrelevant keys")
-      (invalid-request? {:foo "a" :bar "b"}) => true)
+(fact "valid-request? returns falsey given request map with irrelevant keys"
+      (valid-request? {:foo "a" :bar "b"}) => falsey)
+
+(fact "valid-request? returns falsey for requests not containing :weekday AND :time"
+  (valid-request? {:numbers [27]}) => falsey
+  (valid-request? {:time "08:00"}) => falsey
+  (valid-request? {:weekday "la"}) => falsey)
+
+(fact "valid-request? returns falsey when time not valid in request"
+  (valid-request? {:weekday "ma" :time "foo"}) => falsey
+  (valid-request? {:weekday "ma" :time ":05"}) => falsey
+  (valid-request? {:weekday "ma" :time "05:"}) => falsey
+  (valid-request? {:weekday "ma" :time "05:xx"}) => falsey
+  (valid-request? {:weekday "ma" :time "00:-01"}) => falsey
+  (valid-request? {:weekday "ma" :time "24:01"}) => falsey
+  (valid-request? {:weekday "ma" :time "25:00"}) => falsey)
+
+(fact "valid-request? returns falsey when weekday not valid in request"
+  (valid-request? {:weekday "XX" :time "08:00"}) => falsey)
+
+(fact "valid-request? returns truthy for requests that contain both valid :weekday AND :time"
+  (valid-request? {:weekday "ma" :time "08:00"}) => truthy)
 
 ;;-----------------------------------------------
 ;; times-from-line
@@ -445,3 +467,29 @@
       (lines-for {:weekday "la"} day-check-line-data)
       => (contains-maps-having
           {:number 2}{:number 3}))
+
+
+;;-----------------------------------------------
+;; weekday-from
+;;-----------------------------------------------
+
+(def weekday-from (ns-resolve 'bus-jkl.core 'weekday-from))
+
+(let [tuesday-date (ctf/parse (ctf/formatter "dd.MM.yyyy") "01.01.2013")]
+
+  (fact "weekday-from returns ti for datetime that happens to be a Tuesday"
+    (weekday-from tuesday-date) => "ti"))
+
+;;-----------------------------------------------
+;; time-from
+;;-----------------------------------------------
+
+;;TODO check if there is a problem with bus data having times like 24:00 instead of 00:00
+;;TODO think about whether timezones need to be taken into account
+
+(def time-from (ns-resolve 'bus-jkl.core 'time-from))
+
+(let [half-past-ten (ctf/parse (ctf/formatter "dd.MM.yyyy HH:mm") "01.01.2013 22:30")]
+
+  (fact "time-from returns the time from date time"
+    (time-from half-past-ten) => "22:30"))

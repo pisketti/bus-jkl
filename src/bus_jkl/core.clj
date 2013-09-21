@@ -3,12 +3,12 @@
         [clojure.pprint :only [pprint]]
         [clojure.tools.trace])
   (:require [bus-jkl.data :as data]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [clj-time.core :as ct]))
 
 (def ^:dynamic *data* (data/read-data))
 
 (defn- one-of? [str candidates]
-  ;;(println ">> (one-of str=" str " candidates=" candidates ")")
   (when str (some (fn [candidate]
                     (= (upper-case str) (when candidate (upper-case candidate))))
                   candidates)))
@@ -69,7 +69,7 @@
             (filter-by-destination destination)
             (filter-by-weekday weekday))))
 
-(defn- parse-int [str]
+(defn parse-int [str]
   (try
     (Integer. (re-find #"[0-9]*" str))
     (catch Exception e nil)))
@@ -130,12 +130,22 @@
 (defn- sort-by-time [buses-with-metadata]
   (sort-by :time compare-time buses-with-metadata))
 
-(defn- invalid-request? [request]
-  (let [supported-query-args [:numbers :from-centre :destination :weekday :time :within :bus-count]]
-    (empty? (set/intersection (set (keys request)) (set supported-query-args)))))
+(defn- valid-time? [time]
+  (try
+    (let [total-mins (mins-from-midnight time)]
+      (and (>= total-mins 0) (<= total-mins (* 24 60))))
+    (catch Exception e false)))
+
+(defn- valid-weekday? [weekday]
+  (one-of? weekday ["ma" "ti" "ke" "to" "pe" "la" "su"]))
+
+(defn- valid-request? [{:keys [time weekday] :as request}]
+  (and time weekday
+       (valid-time? time)
+       (valid-weekday? weekday)))
 
 (defn- buses-for [{:keys [weekday buscount] :as request} lines]
-  (if (invalid-request? request)
+  (if-not (valid-request? request)
     []
     (->> lines
          (lines-for request)
@@ -146,15 +156,18 @@
          ;;(prn-ret "\nresult: ")
          )))
 
-;; The public API function
+(defn- weekday-from [joda-datetime]
+  ({1 "ma", 2 "ti", 3 "ke", 4 "to", 5 "pe", 6 "la", 7 "su"}
+   (ct/day-of-week joda-datetime)))
 
+(defn- time-from [joda-datetime]
+  nil)
+
+;; The public API function
 ;;TODO implement setting :time to now if not present in request
 ;;TODO implement setting :weekday to this day if not present in request
 ;;TODO support alternative :weekday representations (than ma ti ke to pe la su)
 (defn buses [request]
-  *data*
-  request
   (buses-for (select-keys request
                           [:numbers :from-centre :destination :weekday :time :within :bus-count])
-             *data*)
-  )
+             *data*))
