@@ -102,6 +102,12 @@
           {:number 27 :time "06:35"}
           {:number 27 :time "07:05"}))
 
+(fact "Request for line that has no buses for requested day returns empty vector."
+      (buses-for {:weekday "la"
+                  :time "07:00"}
+                 found-line-data-one-line)
+      => [])
+
 (def found-line-data-many-lines
   [{:number 27
     :title ["Kauppatori" "Mustalampi"]
@@ -162,38 +168,12 @@
           {:number 99 :time "10:30"}
           {:number 12 :time "12:00"}))
 
-(fact (str "Empty request returns empty vector")
-      (buses-for {}
-                 found-line-data-many-lines)
-      => [])
 
-(fact (str "Request with only irrelevant key-vals returns empty vector")
+(fact "Request with only irrelevant key-vals returns empty vector"
       (buses-for {:foo "lorem"
                   :bar "ipsum"}
                  found-line-data-many-lines)
       => [])
-
-
-
-;; ;; TODO test that the day(s) given in request match the results
-
-;; [ ]      If no day given in request, approve all otherwise matching buses
-
-;; ;; SUB-TODOS for the above ;)
-;; [x] TODO test a case when one line has multiple schedules for different days
-
-;; ;; TODO test a case when two buses from different lines are chosen
-;; ;; TODO test a case when there are two lines but the the day don't match
-;; ;; TODO test a case when two buses from different lines are chosen because of the day
-
-
-;; (fact "Returns the next two buses given bus-count of 2"
-;;       (buses-for {:weekday "ti"
-;;                   :time "06:00"
-;;                   :bus-count 2} found-line-data-one-line)
-;;       => (contains-maps-having
-;;           {:number 27 :time "06:35"}
-;;           {:number 27 :time "07:05"}))
 
 ;;-----------------------------------------------
 ;; invalid-request?
