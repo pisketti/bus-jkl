@@ -1,7 +1,8 @@
 (ns bus-jkl.core-test
   (:use clojure.test
         bus-jkl.core
-        midje.sweet))
+        midje.sweet)
+  (:require [clojure.set :as set]))
 
 ;; Test utils
 
@@ -10,6 +11,9 @@
 
 (defn- contains-kv-pairs? [found expected]
   (= (select-keys found (keys expected)) expected))
+
+(defn contains-keys? [target-map expected-keys]
+  (empty? (set/difference (set expected-keys) (set (keys target-map)))))
 
 (defn- contains-kv-pairs-in-each? [found-maps expected-maps]
   (let [matches
@@ -36,11 +40,29 @@
                      "Found: " (count found-maps)
                      "Expected: " (count expected-maps)))))))
 
+(defn- contains-maps-with-keys? [& expected-keys]
+  (fn [found-maps]
+    (let [matches
+          (map (fn [found-map]
+                 {:match (contains-keys? found-map expected-keys)
+                  :found found-map
+                  :expected expected-keys})
+               found-maps)
+          matches-expected (fn [{:keys [match found expected]}]
+                             (if match
+                               true
+                               (do (println "map with keys: " (keys found))
+                                   (println "did not have expected keys: " expected-keys)
+                                   (println ""))))]
+      (every? matches-expected matches))))
+
+
+
 ;;-----------------------------------------------
 ;; buses-for
 ;;-----------------------------------------------
 
-;;(def buses-for (ns-resolve 'bus-jkl.core 'buses-for))
+(def buses-for (ns-resolve 'bus-jkl.core 'buses-for))
 
 (def found-line-data-one-line
   [{:number 27
@@ -57,6 +79,14 @@
                  {:time "07:05"}{:time "07:35"}
                  {:time "08:05"}{:time "08:35"}
                  {:time "09:05"}{:time "09:35"}]}]}])
+
+(fact "A result bus has number, time, title, valid, districts and route"
+      (buses-for {:weekday "ma"
+                  :numbers [27]
+                  :bus-count 1
+                  :time "04:00"}
+                 found-line-data-one-line)
+      => (contains-maps-with-keys? :number :time :title :valid :districts :route))
 
 (fact "Returns one bus when when bus count 1 and only one line applies"
       (buses-for {:weekday "ti"
@@ -96,9 +126,6 @@
                 :buses [{:time "09:00"}{:time "11:00"}]}
                {:day ["la" "su"]
                 :buses [{:time "08:00"}{:time "10:00"}{:time "10:30"}]}]}])
-
-
-;; TODO test that each result "row" has all the metadata like title, districts etc
 
 (fact (str "Returns all buses from time onwards for the correct schedule "
            "when when 1 line explicitly defined in request "
@@ -172,6 +199,8 @@
 ;; invalid-request?
 ;;-----------------------------------------------
 
+(def invalid-request? (ns-resolve 'bus-jkl.core 'invalid-request?))
+
 (fact (str "invalid-request? returns true given empty request map")
       (invalid-request? {}) => true)
 
@@ -182,7 +211,7 @@
 ;; times-from-line
 ;;-----------------------------------------------
 
-;;(def times-from-line (ns-resolve 'bus-jkl.core 'times-from-line))
+(def times-from-line (ns-resolve 'bus-jkl.core 'times-from-line))
 
 (let [line-data [{:time "05:35"}
                  {:time "06:35"}
@@ -262,7 +291,7 @@
 ;; mins-from-midnight
 ;;-----------------------------------------------
 
-;;(def mins-from-midnight (ns-resolve 'bus-jkl.core 'mins-from-midnight))
+(def mins-from-midnight (ns-resolve 'bus-jkl.core 'mins-from-midnight))
 
 (fact "Returns nil for non-number"
       (mins-from-midnight "foo") => nil?)
@@ -288,7 +317,7 @@
 ;; lines-for
 ;;-----------------------------------------------
 
-;;(def lines-for (ns-resolve 'bus-jkl.core 'lines-for))
+(def lines-for (ns-resolve 'bus-jkl.core 'lines-for))
 
 (def line-data [{:number 1
             :title ["Keskusta" "Oz"]
