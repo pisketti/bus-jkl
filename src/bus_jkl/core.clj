@@ -141,8 +141,7 @@
   (one-of? weekday ["ma" "ti" "ke" "to" "pe" "la" "su"]))
 
 (defn- valid-request? [{:keys [time weekday] :as request}]
-  (and time weekday
-       (valid-time? time)
+  (and (valid-time? time)
        (valid-weekday? weekday)))
 
 (defn- buses-for [{:keys [weekday buscount] :as request} lines]
