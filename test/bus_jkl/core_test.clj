@@ -489,7 +489,23 @@
 
 (def time-from (ns-resolve 'bus-jkl.core 'time-from))
 
-(let [half-past-ten (ctf/parse (ctf/formatter "dd.MM.yyyy HH:mm") "01.01.2013 22:30")]
+(let [UTC (ctc/time-zone-for-id "Etc/UTC")
+      EET (ctc/time-zone-for-id "Europe/Helsinki")
+      half-past-six-utc (ctf/parse (ctf/formatter "dd.MM.yyyy HH:mm" UTC) "01.01.2013 17:30")
+      half-past-six-eet (ctf/parse (ctf/formatter "dd.MM.yyyy HH:mm" EET) "01.01.2013 17:30")
+      half-past-six-dst-utc (ctf/parse (ctf/formatter "dd.MM.yyyy HH:mm" UTC) "01.06.2013 17:30")
+      half-past-six-dst-eet (ctf/parse (ctf/formatter "dd.MM.yyyy HH:mm" EET) "01.06.2013 17:30")]
 
-  (fact "time-from returns the time from date time"
-    (time-from half-past-ten) => "22:30"))
+  (fact "time-from returns the time unmodified when datetime tz and given tz are the same"
+    (time-from half-past-six-utc UTC) => "17:30"
+    (time-from half-past-six-eet EET) => "17:30"
+    (time-from half-past-six-dst-utc UTC) => "17:30"
+    (time-from half-past-six-dst-eet EET) => "17:30")
+
+  (fact "time-from returns the time converted to given tz when it differs from date time tz"
+    (time-from half-past-six-utc EET) => "19:30"
+    (time-from half-past-six-eet UTC) => "15:30")
+
+  (fact "time-from returns the time converted to given tz when it differs from date time tz when DST on"
+    (time-from half-past-six-dst-utc EET) => "20:30"
+    (time-from half-past-six-dst-eet UTC) => "14:30"))

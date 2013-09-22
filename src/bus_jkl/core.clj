@@ -4,7 +4,8 @@
         [clojure.tools.trace])
   (:require [bus-jkl.data :as data]
             [clojure.set :as set]
-            [clj-time.core :as ct]))
+            [clj-time.core :as ctc]
+            [clj-time.format :as ctf]))
 
 (def ^:dynamic *data* (data/read-data))
 
@@ -158,16 +159,28 @@
 
 (defn- weekday-from [joda-datetime]
   ({1 "ma", 2 "ti", 3 "ke", 4 "to", 5 "pe", 6 "la", 7 "su"}
-   (ct/day-of-week joda-datetime)))
+   (ctc/day-of-week joda-datetime)))
 
-(defn- time-from [joda-datetime]
-  nil)
+(defn- time-from [joda-datetime timezone]
+  (ctf/unparse (ctf/formatter "HH:mm" timezone) joda-datetime))
 
-;; The public API function
-;;TODO implement setting :time to now if not present in request
-;;TODO implement setting :weekday to this day if not present in request
+(defn now-in-tz [tz]
+  (-> (ctc/now)
+      (ctc/to-time-zone tz)))
+
+;;The public API function
 ;;TODO support alternative :weekday representations (than ma ti ke to pe la su)
-(defn buses [request]
-  (buses-for (select-keys request
-                          [:numbers :from-centre :destination :weekday :time :within :bus-count])
-             *data*))
+(defn buses [{:keys [weekday time] :as request}]
+  (let [EET (ctc/time-zone-for-id "Europe/Helsinki")
+        now (now-in-tz EET)
+        request-time-added (if-not time
+                             (-> request
+                                 (assoc :time (time-from now EET))
+                                 (assoc :weekday (weekday-from now)))
+                             request)]
+    ;;(println "time in request: " (:time request-time-added))
+    ;;(println "weekday in request: " (:weekday request-time-added))
+    (buses-for (select-keys request-time-added
+                            [:numbers :from-centre :destination
+                             :weekday :time :within :bus-count])
+               *data*)))
