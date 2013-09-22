@@ -152,9 +152,7 @@
          (buses-from-lines request)
          flatten
          sort-by-time
-         (limit-by-count buscount)
-         ;;(prn-ret "\nresult: ")
-         )))
+         (limit-by-count buscount))))
 
 (defn- weekday-from [joda-datetime]
   ({1 "ma", 2 "ti", 3 "ke", 4 "to", 5 "pe", 6 "la", 7 "su"}
