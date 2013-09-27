@@ -161,23 +161,45 @@
 (defn- time-from [joda-datetime timezone]
   (ctf/unparse (ctf/formatter "HH:mm" timezone) joda-datetime))
 
-(defn now-in-tz [tz]
+(defn- now-in-tz [tz]
   (-> (ctc/now)
       (ctc/to-time-zone tz)))
+
+(defn- add-time-defaults [{:keys [time weekday] :as request} now timezone]
+  (let [add-time-and-day (fn [request]
+                           (cond (not time) (-> request
+                                               (assoc :time (time-from now timezone))
+                                               (assoc :weekday (weekday-from now)))
+                                 (not weekday) (-> request
+                                                   (assoc :weekday (weekday-from now)))
+                                 :else request))]
+    (-> request
+        add-time-and-day)))
+
+;;TODO add handling to numbers (list). Perhaps here or someplace else
+(defn- str-vals-to-numbers [{:keys [bus-count] :as request}]
+  (if bus-count
+    (assoc request :bus-count (parse-int bus-count))
+    request))
+
+(defn- default-bus-count [{:keys [bus-count] :as request}]
+  (if-not
+      bus-count (assoc request :bus-count 1)
+      request))
+
 
 ;;The public API function
 ;;TODO support alternative :weekday representations (than ma ti ke to pe la su)
 (defn buses [{:keys [weekday time] :as request}]
   (let [EET (ctc/time-zone-for-id "Europe/Helsinki")
         now (now-in-tz EET)
-        request-time-added (if-not time
-                             (-> request
-                                 (assoc :time (time-from now EET))
-                                 (assoc :weekday (weekday-from now)))
-                             request)]
+        request-with-defaults (-> request
+                                  (add-time-defaults now EET)
+                                  (str-vals-to-numbers)
+                                  (default-bus-count))]
     ;;(println "time in request: " (:time request-time-added))
     ;;(println "weekday in request: " (:weekday request-time-added))
-    (buses-for (select-keys request-time-added
+    (buses-for (select-keys request-with-defaults
                             [:numbers :from-centre :destination
                              :weekday :time :within :bus-count])
                *data*)))

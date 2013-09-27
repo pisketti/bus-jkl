@@ -4,27 +4,23 @@
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
             [ring.middleware.json :as middleware]
+            [ring.util.response :as resp]
             [clojure.walk :as walk]))
-
-;; (defroutes app-routes
-;;   (GET "/" [] {:body (bus/buses {:from-centre true
-;;                                  :bus-count 2
-;;                                  :time "08:00"
-;;                                  :weekday "ma"
-;;                                  :numbers [27]})})
-;;   (route/resources "/")
-;;   (route/not-found "Not Found"))
 
 (defn query-buses [httpreq-params]
   (let [bus-request (walk/keywordize-keys httpreq-params)]
-    ;;(assoc bus-request :new "val")
-    (buses bus-request)
-    ))
+    (buses bus-request)))
+
+(defn client []
+  (resp/resource-response "index.html" {:root "public"}))
 
 (defroutes app-routes
-  (GET "/" {params :params} {:body (query-buses params)})
+  (GET "/json" {params :params} {:body (query-buses params)})
+  (GET "/client" [] (client))
+  (GET "/" [] (client))
   (route/resources "/")
   (route/not-found "Not Found"))
+
 
 (def app
   (-> (handler/api app-routes)
