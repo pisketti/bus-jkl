@@ -3,6 +3,7 @@
         [clojure.pprint :only [pprint]]
         [clojure.tools.trace])
   (:require [bus-jkl.data :as data]
+            [bus-jkl.util :as util]
             [clojure.set :as set]
             [clj-time.core :as ctc]
             [clj-time.format :as ctf]))
@@ -70,15 +71,10 @@
             (filter-by-destination destination)
             (filter-by-weekday weekday))))
 
-(defn parse-int [str]
-  (try
-    (Integer. (re-find #"[0-9]*" str))
-    (catch Exception e nil)))
-
 (defn- mins-from-midnight [time-str]
   (let [[hours-str mins-str] (split time-str #":")
-        mins (parse-int mins-str)
-        hours (parse-int hours-str)]
+        mins (util/parse-int mins-str)
+        hours (util/parse-int hours-str)]
     (if (and mins hours)
       (+ (* 60 hours) mins))))
 
@@ -177,9 +173,10 @@
         add-time-and-day)))
 
 ;;TODO add handling to numbers (list). Perhaps here or someplace else
+;;TODO move this to request.clj
 (defn- str-vals-to-numbers [{:keys [bus-count] :as request}]
   (if bus-count
-    (assoc request :bus-count (parse-int bus-count))
+    (assoc request :bus-count (util/parse-int bus-count))
     request))
 
 (defn- default-bus-count [{:keys [bus-count] :as request}]
