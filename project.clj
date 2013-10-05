@@ -6,7 +6,8 @@
                  [ring/ring-json "0.2.0"]
                  [clj-time "0.6.0"]
                  [midje "1.5.1"]
-                 [org.clojure/tools.trace "0.7.6"]]
+                 [org.clojure/tools.trace "0.7.6"]
+                 [org.clojure/data.json "0.2.3"]]
   :plugins [[lein-ring "0.8.5"]
             [lein-midje "3.0.1"]]
   :ring {:handler bus-jkl.handler/app}
