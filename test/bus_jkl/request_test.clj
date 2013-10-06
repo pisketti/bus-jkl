@@ -24,8 +24,8 @@
   (line-numbers-to-seq {:numbers " [ 9 ] "}) => {:numbers ["9"]}
   (line-numbers-to-seq {:numbers " [ 8 9 ] "}) => {:numbers ["89"]})
 
-;; (fact "Request has several numbers as string. Returns the map with items converted to seq as numbers"
-;;   (line-numbers-to-seq {:numbers "9,10"}) => {:numbers [9 10]}
-;;   (line-numbers-to-seq {:numbers "(9,10)"}) => {:numbers [9 10]}
-;;   (line-numbers-to-seq {:numbers "[9,10]"}) => {:numbers [9 10]}
-;;   (line-numbers-to-seq {:numbers "[ 1 1 , 2 2 ]"}) => {:numbers [11 22]})
+(fact "Request has several numbers as string. Returns the map with items converted to seq as numbers"
+  (line-numbers-to-seq {:numbers "9,10"}) => {:numbers ["9" "10"]}
+  (line-numbers-to-seq {:numbers "(9,10)"}) => {:numbers ["9" "10"]}
+  (line-numbers-to-seq {:numbers "[9,10]"}) => {:numbers ["9" "10"]}
+  (line-numbers-to-seq {:numbers "[ 1 1 , 2 2 ]"}) => {:numbers ["11" "22"]})
