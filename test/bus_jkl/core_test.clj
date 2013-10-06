@@ -67,7 +67,7 @@
 (def buses-for (ns-resolve 'bus-jkl.core 'buses-for))
 
 (def found-line-data-one-line
-  [{:number 27
+  [{:number "27"
     :title ["Kauppatori" "Mustalampi"]
     :valid ["03.06.2013" "08.08.2013"]
     :districts ["HEIKKILÄ" "KAUPPATORI" "KELTINMÄKI" "MUSTALAMPI"]
@@ -84,7 +84,7 @@
 
 (fact "A result bus has number, time, title, valid, districts and route"
       (buses-for {:weekday "ma"
-                  :numbers [27]
+                  :numbers ["27"]
                   :bus-count 1
                   :time "04:00"}
                  found-line-data-one-line)
@@ -101,8 +101,8 @@
                   :time "06:00"
                   :bus-count 2} found-line-data-one-line)
       => (contains-maps-having
-          {:number 27 :time "06:35"}
-          {:number 27 :time "07:05"}))
+          {:number "27" :time "06:35"}
+          {:number "27" :time "07:05"}))
 
 (fact "Request for line that has no buses for requested day returns empty vector."
       (buses-for {:weekday "la"
@@ -111,21 +111,21 @@
       => [])
 
 (def found-line-data-many-lines
-  [{:number 27
+  [{:number "27"
     :title ["Kauppatori" "Mustalampi"]
     :valid ["03.06.2013" "08.08.2013"]
     :districts ["HEIKKILÄ" "KAUPPATORI" "KELTINMÄKI" "MUSTALAMPI"]
     :route [{:stop "Foo street"}]
     :schedule [{:day ["ma" "ti" "ke" "to" "pe"]
                 :buses [{:time "08:00"}{:time "10:00"}]}]}
-   {:number 12
+   {:number "12"
     :title ["Keskusta" "Keltinmäki"]
     :valid ["03.06.2013" "08.08.2013"]
     :districts ["KAUPPATORI" "KELTINMÄKI"]
     :route [{:stop "Bar street"}]
     :schedule [{:day ["pe" "la" "su"]
                 :buses [{:time "08:15"}{:time "12:00"}]}]}
-   {:number 99
+   {:number "99"
     :title ["Oz" "Keskusta"]
     :valid ["03.06.2013" "08.08.2013"]
     :districts ["HOLLYWOOD" "KESKUSTA"]
@@ -139,23 +139,23 @@
            "when when 1 line explicitly defined in request "
            "and weekday not in the first schedule")
       (buses-for {:weekday "la"
-                  :numbers [99]
+                  :numbers ["99"]
                   :time "08:30"}
                  found-line-data-many-lines)
       => (contains-maps-having
-          {:number 99 :time "10:00"}
-          {:number 99 :time "10:30"}))
+          {:number "99" :time "10:00"}
+          {:number "99" :time "10:30"}))
 
 (fact (str "Returns all buses from time onwards for the correct schedule "
            "when when 1 line explicitly defined in request "
            "and weekday not in the first schedule")
       (buses-for {:weekday "la"
-                  :numbers [99]
+                  :numbers ["99"]
                   :time "08:30"}
                  found-line-data-many-lines)
       => (contains-maps-having
-          {:number 99 :time "10:00"}
-          {:number 99 :time "10:30"}))
+          {:number "99" :time "10:00"}
+          {:number "99" :time "10:30"}))
 
 (fact (str "Returns all buses from time onwards from two separate lines"
            "when lines (numbers) not limited in request"
@@ -164,11 +164,11 @@
                   :time "07:00"}
                  found-line-data-many-lines)
       => (contains-maps-having
-          {:number 99 :time "08:00"}
-          {:number 12 :time "08:15"}
-          {:number 99 :time "10:00"}
-          {:number 99 :time "10:30"}
-          {:number 12 :time "12:00"}))
+          {:number "99" :time "08:00"}
+          {:number "12" :time "08:15"}
+          {:number "99" :time "10:00"}
+          {:number "99" :time "10:30"}
+          {:number "12" :time "12:00"}))
 
 
 (fact "Request with only irrelevant key-vals returns empty vector"
@@ -190,7 +190,7 @@
       (valid-request? {:foo "a" :bar "b"}) => falsey)
 
 (fact "valid-request? returns falsey for requests not containing :weekday AND :time"
-  (valid-request? {:numbers [27]}) => falsey
+  (valid-request? {:numbers ["27"]}) => falsey
   (valid-request? {:time "08:00"}) => falsey
   (valid-request? {:weekday "la"}) => falsey)
 
@@ -321,84 +321,84 @@
 
 (def lines-for (ns-resolve 'bus-jkl.core 'lines-for))
 
-(def line-data [{:number 1
-            :title ["Keskusta" "Oz"]
-            :districts ["FOO" "BAR"]
-            :route [{:stop "foo street"}]}
-           {:number 2
-            :title ["Oz" "Keskusta"]
-            :districts ["FOO" "BAR"]
-            :route [{:stop "foo street"}]}
-           {:number 3
-            :title ["Keskusta" "Keljo"]
-            :districts ["FOO" "BAR"]
-            :route [{:stop "foo street"}]}])
+(def line-data [{:number "1"
+                 :title ["Keskusta" "Oz"]
+                 :districts ["FOO" "BAR"]
+                 :route [{:stop "foo street"}]}
+                {:number "2"
+                 :title ["Oz" "Keskusta"]
+                 :districts ["FOO" "BAR"]
+                 :route [{:stop "foo street"}]}
+                {:number "3"
+                 :title ["Keskusta" "Keljo"]
+                 :districts ["FOO" "BAR"]
+                 :route [{:stop "foo street"}]}])
 
 ;; When :from-centre not given
 
 (fact "Empty request returns all lines"
       (lines-for {} line-data)
-      => (contains-maps-having {:number 1}{:number 2}{:number 3}))
+      => (contains-maps-having {:number "1"}{:number "2"}{:number "3"}))
 
 (fact "Finds 1 line when only one number given"
-      (lines-for {:numbers [3]} line-data)
-      => (contains-maps-having {:number 3}))
+      (lines-for {:numbers ["3"]} line-data)
+      => (contains-maps-having {:number "3"}))
 
 (fact "Finds all lines when no limitations given"
       (lines-for {} line-data)
-      => (contains-maps-having {:number 1} {:number 2} {:number 3}))
+      => (contains-maps-having {:number "1"} {:number "2"} {:number "3"}))
 
 ;; When :from-centre given
 
 (fact "Finds 0 lines from city centre for unknown numbers"
-  (lines-for {:numbers [123]
+  (lines-for {:numbers ["123"]
                :from-centre true
                :destination "irrelevant"}
               found-line-data-many-lines)
   => [])
 
 (fact "Finds 1 line from city centre when number given but no destination"
-  (lines-for {:numbers [3]
+  (lines-for {:numbers ["3"]
                :from-centre true}
               line-data)
-  => (contains-maps-having {:number 3}))
+  => (contains-maps-having {:number "3"}))
 
 (fact "Finds all lines from city centre when number no number or destination given"
       (lines-for {:from-centre true} line-data)
-      => (contains-maps-having {:number 1} {:number 3}))
+      => (contains-maps-having {:number "1"} {:number "3"}))
 
 (fact "Finds a single line from city centre when title is written in varying case"
   (lines-for {:from-centre true}
-              [{:number 1
+              [{:number "1"
                 :title ["kesKUSTA" "Oz"]
                 :districts ["FOO" "BAR"]
                 :route [{:stop "foo street"}]}])
-  => (contains-maps-having {:number 1}))
+  => (contains-maps-having {:number "1"}))
 
 (fact "Interpretes kauppatori as city centre as well"
   (lines-for {:from-centre true}
-              [{:number 1
+              [{:number "1"
                 :title ["Kauppatori" "Oz"]
                 :districts ["FOO" "BAR"]
                 :route [{:stop "foo street"}]}])
-  => (contains-maps-having {:number 1}))
+  => (contains-maps-having {:number "1"}))
 
 (fact "Finds all lines NOT from city centre when number no number or destination given"
   (lines-for {:from-centre false} line-data)
-  => (contains-maps-having {:number 2}))
+  => (contains-maps-having {:number "2"}))
 
 ;; Tests for choosing lines by :destination
 
 (def dest-check-line-data
-  [{:number 1
+  [{:number "1"
     :title ["Keskusta" "viitaniemi" "Oz"]
     :districts ["harju" "oz"]
     :route [{:stop "a st"}{:stop "b st"}{:stop "dest st"}]}
-   {:number 2
+   {:number "2"
     :title ["Oz" "Keltinmäki"]
     :districts ["oz" "harju" "viitaniemi" "valhalla"]
     :route [{:stop "dest st"}{:stop "e st"}{:stop "f st"}]}
-   {:number 3
+   {:number "3"
     :title ["Keskusta" "Keltinmäki" "Mustalampi"]
     :districts ["valhalla" "harju"]
     :route [{:stop "x st"}{:stop "dest st"}{:stop "viitaniemi"}]}])
@@ -407,42 +407,42 @@
 
 (fact "Finds lines having destination in the TITLE but not as the first item"
       (lines-for {:destination "Keltinmäki"} dest-check-line-data)
-      => (contains-maps-having {:number 2} {:number 3}))
+      => (contains-maps-having {:number "2"} {:number "3"}))
 
 ;; Checking destination from DISTRICTS
 
 (fact "Finds lines having destination in the DISTRICTS but not as the first one"
       (lines-for {:destination "harju"} dest-check-line-data)
-      => (contains-maps-having {:number 2} {:number 3}))
+      => (contains-maps-having {:number "2"} {:number "3"}))
 
 ;; Checking destination from the ROUTE (= the street names)
 
 (fact "Finds lines having destination in the ROUTE but not as the first one"
       (lines-for {:destination "dest st"}
                          dest-check-line-data)
-      => (contains-maps-having {:number 1} {:number 3}))
+      => (contains-maps-having {:number "1"} {:number "3"}))
 
 ;; Checking destination combining TITLE and DISTRICT and ROUTE
 
 (fact "Finds lines having destination in either TTILE, DISTRICT or ROUTE but not as the first item."
       (lines-for {:destination "viitaniemi"}
                          dest-check-line-data)
-      => (contains-maps-having {:number 1} {:number 2} {:number 3}))
+      => (contains-maps-having {:number "1"} {:number "2"} {:number "3"}))
 
 (def day-check-line-data
-  [{:number 1
+  [{:number "1"
     :title ["Keskusta" "viitaniemi" "Oz"]
     :districts ["harju" "oz"]
     :route [{:stop "a st"}{:stop "b st"}{:stop "dest st"}]
     :schedule [{:day ["ma" "ti" "ke" "to"]
                 :buses [{:time "08:30"}{:time "08:45"}]}]}
-   {:number 2
+   {:number "2"
     :title ["Oz" "Keltinmäki"]
     :districts ["oz" "harju" "viitaniemi" "valhalla"]
     :route [{:stop "dest st"}{:stop "e st"}{:stop "f st"}]
     :schedule [{:day ["la" "su"]
                 :buses [{:time "08:45"}{:time "09:00"}]}]}
-   {:number 3
+   {:number "3"
     :title ["Keskusta" "Keltinmäki" "Mustalampi"]
     :districts ["valhalla" "harju"]
     :route [{:stop "x st"}{:stop "dest st"}{:stop "viitaniemi"}]
@@ -455,18 +455,18 @@
 (fact "Returns the only line that is valid for the day"
       (lines-for {:weekday "pe"} day-check-line-data)
       => (contains-maps-having
-          {:number 3}))
+          {:number "3"}))
 
 (fact "Returns the two lines that are valid for the day"
       (lines-for {:weekday "ma"} day-check-line-data)
       => (contains-maps-having
-          {:number 1}{:number 3}))
+          {:number "1"}{:number "3"}))
 
-(fact (str "Returns the valid lines when some line has several schedules"
-           "and weekday found not found in first schedule")
+(fact "Returns the valid lines when some line has several schedules
+       and weekday found not found in first schedule"
       (lines-for {:weekday "la"} day-check-line-data)
       => (contains-maps-having
-          {:number 2}{:number 3}))
+          {:number "2"}{:number "3"}))
 
 
 ;;-----------------------------------------------

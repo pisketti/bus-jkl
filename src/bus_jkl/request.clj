@@ -30,8 +30,7 @@
        remove-whitespace
        drop-parens
        components
-       (filter int-str?)
-       (map util/parse-int)))
+       (remove empty?)))
 
 (defn line-numbers-to-seq [{:keys [numbers] :as params}]
   (if numbers

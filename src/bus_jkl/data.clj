@@ -1,7 +1,7 @@
 (ns bus-jkl.data)
 
 (def data
-  [{:number 27
+  [{:number "27"
     :title ["Kauppatori" "Mustalampi"]
     :valid ["03.06.2013" "08.08.2013"]
     :districts ["HEIKKILÄ" "KAUPPATORI" "KELTINMÄKI" "MUSTALAMPI"]
