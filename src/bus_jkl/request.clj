@@ -44,3 +44,14 @@
   (if bus-count
     (assoc params :bus-count (util/parse-int bus-count))
     params))
+
+(defn pret [msg x]
+  (println msg)
+  x)
+
+(defn return-fields-to-seq [{:keys [return-fields] :as params}]
+  (if return-fields
+    (assoc params :return-fields (->> return-fields
+                                      parse-seq
+                                      (map keyword)))
+    params))

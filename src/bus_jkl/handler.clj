@@ -15,6 +15,7 @@
   (-> http-req-params
       req/line-numbers-to-seq
       req/bus-count-to-int
+      req/return-fields-to-seq
       buses))
 
 (defn- client []
