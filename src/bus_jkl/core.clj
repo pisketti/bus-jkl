@@ -172,18 +172,10 @@
     (-> request
         add-time-and-day)))
 
-;;TODO add handling to numbers (list). Perhaps here or someplace else
-;;TODO move this to request.clj
-(defn- str-vals-to-numbers [{:keys [bus-count] :as request}]
-  (if bus-count
-    (assoc request :bus-count (util/parse-int bus-count))
-    request))
-
 (defn- default-bus-count [{:keys [bus-count] :as request}]
   (if-not
       bus-count (assoc request :bus-count 1)
       request))
-
 
 ;;The public API function
 ;;TODO support alternative :weekday representations (than ma ti ke to pe la su)
@@ -192,7 +184,7 @@
         now (now-in-tz EET)
         request-with-defaults (-> request
                                   (add-time-defaults now EET)
-                                  (str-vals-to-numbers)
+                                  ;;(str-vals-to-numbers)
                                   (default-bus-count))]
     ;;(println "time in request: " (:time request-time-added))
     ;;(println "weekday in request: " (:weekday request-time-added))
