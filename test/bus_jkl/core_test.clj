@@ -509,3 +509,24 @@
   (fact "time-from returns the time converted to given tz when it differs from date time tz when DST on"
     (time-from half-past-six-dst-utc EET) => "20:30"
     (time-from half-past-six-dst-eet UTC) => "14:30"))
+
+
+;;-----------------------------------------------
+;; filter-return-fields
+;;-----------------------------------------------
+
+(def filter-return-fields (ns-resolve 'bus-jkl.core 'filter-return-fields))
+
+  (fact "Result map returned unchanged when return-fields has no value(s) in request"
+    (filter-return-fields [{:x "x"}] []) => [{:x "x"}]
+    (filter-return-fields [{:x "x"}] nil) => [{:x "x"}]
+    (filter-return-fields [{:x "x"} {:x "x", :y "y"}] []) => [{:x "x"} {:x "x", :y "y"}])
+
+  (fact "If return-fields not empty and those fields not in result, return empty maps"
+    (filter-return-fields [{:x "x" } {:x "x", :y "y"}] [:foo]) => [{} {}])
+
+
+(fact "Other fields than the ones in return-fields dropped from result"
+  (filter-return-fields [{:x "x" } {:x "x", :y "y"}] [:x]) => [{:x "x"} {:x "x"}]
+  (filter-return-fields [{:x "x" } {:x "x", :y "y"}] [:y]) => [{} {:y "y"}]
+  (filter-return-fields [{:x "x", :z "z" } {:y "y", :z "z"}] [:x :z]) => [{:x "x", :z "z"} {:z "z"}])

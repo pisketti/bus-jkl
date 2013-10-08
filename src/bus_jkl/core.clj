@@ -179,16 +179,34 @@
 
 ;;The public API function
 ;;TODO support alternative :weekday representations (than ma ti ke to pe la su)
-(defn buses [{:keys [weekday time] :as request}]
-  (let [EET (ctc/time-zone-for-id "Europe/Helsinki")
-        now (now-in-tz EET)
-        request-with-defaults (-> request
-                                  (add-time-defaults now EET)
-                                  ;;(str-vals-to-numbers)
-                                  (default-bus-count))]
-    ;;(println "time in request: " (:time request-time-added))
-    ;;(println "weekday in request: " (:weekday request-time-added))
-    (buses-for (select-keys request-with-defaults
-                            [:numbers :from-centre :destination
-                             :weekday :time :within :bus-count])
-               *data*)))
+;;TODO consider moving the logic to add default values outside of this file.
+;;     eg. to request.clj.
+
+
+;; SEURAAVAKSI IMPLEMENTOI return-fields kenttien käsittely.
+;; Palauta vaan ne jotka ko. listalla tai jos listaa ei ole niin sitten
+;; kaikki normaalit
+
+(defn- add-defaults [request]
+  (let [ EET (ctc/time-zone-for-id "Europe/Helsinki")
+        now (now-in-tz EET)]
+    (-> request
+        (add-time-defaults now EET)
+        (default-bus-count))))
+
+(defn- filter-needed-keys [request]
+  (select-keys request
+               [:numbers :from-centre :destination
+                :weekday :time :within :bus-count]))
+
+(defn- filter-return-fields [result return-fields]
+  (if-not (empty? return-fields)
+    (map (fn [result-entry] (select-keys result-entry return-fields)) result)
+    result))
+
+(defn buses [{:keys [return-fields] :as request}]
+  (-> request
+      add-defaults
+      filter-needed-keys
+      (buses-for *data*)
+      (filter-return-fields return-fields)))
