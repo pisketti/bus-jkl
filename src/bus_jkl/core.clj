@@ -183,10 +183,6 @@
 ;;     eg. to request.clj.
 
 
-;; SEURAAVAKSI IMPLEMENTOI return-fields kenttien käsittely.
-;; Palauta vaan ne jotka ko. listalla tai jos listaa ei ole niin sitten
-;; kaikki normaalit
-
 (defn- add-defaults [request]
   (let [ EET (ctc/time-zone-for-id "Europe/Helsinki")
         now (now-in-tz EET)]
