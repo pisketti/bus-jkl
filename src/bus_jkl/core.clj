@@ -85,6 +85,7 @@
       (< (mins-from-midnight time) max-mins))))
 
 (defn- within-time [now within-mins]
+  "Returns a function that checks whether a given time is within a time period"
   (let [max-mins (+ (mins-from-midnight now) within-mins)]
     (fn [{:keys [time]}]
       (< (mins-from-midnight time) max-mins))))
@@ -93,7 +94,7 @@
   (if count (take count buses) buses))
 
 (defn- times-from-line [{:keys [time bus-count within]} line-data]
-  "Filteres the lines that match the request from all lines"
+  "Filters the lines that match the request from all lines"
   (let [drop-earlier-buses (fn [time buses] (drop-while (earlier-than time) buses))
         limit-by-time (fn [from-time within buses]
                         (if within (take-while (within-time from-time within) buses) buses))]
