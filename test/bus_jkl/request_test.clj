@@ -49,7 +49,8 @@
   (return-fields-to-seq {:foo "foo"}) => {:foo "foo"}
   (return-fields-to-seq {:foo "foo", :return-fields nil}) => {:foo "foo", :return-fields nil})
 
-(fact "Request params have return fiels with one value  x as string. Returns the map with :return-fields [:x]"
+(fact "Request params have return fiels with one value  x as string.
+       Returns the map with :return-fields [:x]"
   (return-fields-to-seq {:return-fields "x"}) => {:return-fields [:x]}
   (return-fields-to-seq {:return-fields "[x]"}) => {:return-fields [:x]}
   (return-fields-to-seq {:return-fields "(x)"}) => {:return-fields [:x]}

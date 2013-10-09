@@ -22,27 +22,17 @@
               true))
           lines))
 
-(defn- filter-by-from-centre [from-centre lines]
-  (filter (fn [{:keys [title] :as line}]
-            (let [line-from-centre (one-of? (first title)
-                                            ["keskusta" "kauppatori"])]
-              (cond
-               (true? from-centre) line-from-centre
-               (false? from-centre) (not line-from-centre)
-               :else true))) ;; do not drop lines if from-centre not set
-          lines))
-
-(defn- filter-by-destination [destination lines]
-  "Filters lines by destination. Checks title, districts and route.
-   Skips the first in each since destination cannot be where the travelling starts."
-  (if-not destination
-    lines
-    (filter
-     (fn [{:keys [title districts route]}]
-       (or (one-of? destination (rest title))
-           (one-of? destination (rest districts))
-           (one-of? destination (rest (map :stop route)))))
-     lines)))
+;; (defn- filter-by-destination [destination lines]
+;;   "Filters lines by destination. Checks title, districts and route.
+;;    Skips the first in each since destination cannot be where the travelling starts."
+;;   (if-not destination
+;;     lines
+;;     (filter
+;;      (fn [{:keys [title districts route]}]
+;;        (or (one-of? destination (rest title))
+;;            (one-of? destination (rest districts))
+;;            (one-of? destination (rest (map :stop route)))))
+;;      lines)))
 
 ;;TODO: can be removed. For debugging only
 (defn- prn-ret [msg returnable]
@@ -62,13 +52,41 @@
          (one-of? weekday days-of-line)))
      lines)))
 
+;; (defn- filter-by-from-centre [from-centre lines]
+;;   (filter (fn [{:keys [title] :as line}]
+;;             (let [line-from-centre (one-of? (first title)
+;;                                             ["keskusta" "kauppatori"])]
+;;               (cond
+;;                (true? from-centre) line-from-centre
+;;                (false? from-centre) (not line-from-centre)
+;;                :else true))) ;; do not drop lines if from-centre not set
+;;           lines))
 
-(defn- lines-for [{:keys [numbers from-centre destination weekday] :as request} data]
+
+;;TODO check that from needs to be before destination
+(defn matches-path [from destination path]
+  (or (one-of? from (butlast path))
+      (one-of? destination (rest path))))
+
+(defn- filter-by-from-and-destination [from destination lines]
+  "Filters lines by destination. Checks title, districts and route.
+   Skips the first in each since destination cannot be where the travelling starts."
+  (if (or from destination)
+    (filter
+     (fn [{:keys [title districts route]}]
+       (or (matches-path from destination title)
+           (matches-path from destination districts)
+           (matches-path from destination (map :stop route))))
+     lines)
+    lines))
+
+
+(defn- lines-for [{:keys [numbers from destination weekday] :as request} data]
   (when (and request data)
        (->> data
             (filter-by-numbers numbers)
-            (filter-by-from-centre from-centre)
-            (filter-by-destination destination)
+            (filter-by-from-and-destination from destination)
+            ;;(filter-by-destination destination)
             (filter-by-weekday weekday))))
 
 (defn- mins-from-midnight [time-str]
@@ -178,11 +196,8 @@
       bus-count (assoc request :bus-count 1)
       request))
 
-;;The public API function
-;;TODO support alternative :weekday representations (than ma ti ke to pe la su)
 ;;TODO consider moving the logic to add default values outside of this file.
 ;;     eg. to request.clj.
-
 
 (defn- add-defaults [request]
   (let [ EET (ctc/time-zone-for-id "Europe/Helsinki")
@@ -201,7 +216,10 @@
     (map (fn [result-entry] (select-keys result-entry return-fields)) result)
     result))
 
+;;TODO support alternative :weekday representations (than ma ti ke to pe la su)
+
 (defn buses [{:keys [return-fields] :as request}]
+  "The public API function for fetching the buses matching the request"
   (-> request
       add-defaults
       filter-needed-keys

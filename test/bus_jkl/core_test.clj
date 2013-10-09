@@ -323,20 +323,20 @@
 
 (def line-data [{:number "1"
                  :title ["Keskusta" "Oz"]
-                 :districts ["FOO" "BAR"]
+                 :districts ["foo" "bar"]
                  :route [{:stop "foo street"}]}
                 {:number "2"
                  :title ["Oz" "Keskusta"]
-                 :districts ["FOO" "BAR"]
+                 :districts ["bar" "baz" "qux"]
                  :route [{:stop "foo street"}]}
                 {:number "3"
                  :title ["Keskusta" "Keljo"]
-                 :districts ["FOO" "BAR"]
+                 :districts ["qux" "meh"]
                  :route [{:stop "foo street"}]}])
 
-;; When :from-centre not given
+;; When neither :from or :destination given
 
-(fact "Empty request returns all lines"
+(fact "Empty request (= no limitations) returns all lines"
       (lines-for {} line-data)
       => (contains-maps-having {:number "1"}{:number "2"}{:number "3"}))
 
@@ -344,28 +344,20 @@
       (lines-for {:numbers ["3"]} line-data)
       => (contains-maps-having {:number "3"}))
 
-(fact "Finds all lines when no limitations given"
-      (lines-for {} line-data)
-      => (contains-maps-having {:number "1"} {:number "2"} {:number "3"}))
-
-;; When :from-centre given
-
 (fact "Finds 0 lines from city centre for unknown numbers"
-  (lines-for {:numbers ["123"]
-               :from-centre true
-               :destination "irrelevant"}
-              found-line-data-many-lines)
+  (lines-for {:numbers ["123"]}
+             found-line-data-many-lines)
   => [])
 
-(fact "Finds 1 line from city centre when number given but no destination"
-  (lines-for {:numbers ["3"]
-               :from-centre true}
-              line-data)
-  => (contains-maps-having {:number "3"}))
 
-(fact "Finds all lines from city centre when number no number or destination given"
-      (lines-for {:from-centre true} line-data)
-      => (contains-maps-having {:number "1"} {:number "3"}))
+;;TODO REMOVE ALL tests having :from-centre
+;;TODO write more tests for cases where both :from and :destination given
+
+;; When :from given but no :destination
+
+;; (fact "Finds all lines from Keskusta when number no number or destination given"
+;;       (lines-for {:from "Keskusta"} line-data)
+;;       => (contains-maps-having {:number "1"} {:number "3"}))
 
 (fact "Finds a single line from city centre when title is written in varying case"
   (lines-for {:from-centre true}
@@ -383,9 +375,9 @@
                 :route [{:stop "foo street"}]}])
   => (contains-maps-having {:number "1"}))
 
-(fact "Finds all lines NOT from city centre when number no number or destination given"
-  (lines-for {:from-centre false} line-data)
-  => (contains-maps-having {:number "2"}))
+;; (fact "Finds all lines NOT from city centre when number no number or destination given"
+;;   (lines-for {:from-centre false} line-data)
+;;   => (contains-maps-having {:number "2"}))
 
 ;; Tests for choosing lines by :destination
 
