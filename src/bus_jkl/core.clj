@@ -22,18 +22,6 @@
               true))
           lines))
 
-;; (defn- filter-by-destination [destination lines]
-;;   "Filters lines by destination. Checks title, districts and route.
-;;    Skips the first in each since destination cannot be where the travelling starts."
-;;   (if-not destination
-;;     lines
-;;     (filter
-;;      (fn [{:keys [title districts route]}]
-;;        (or (one-of? destination (rest title))
-;;            (one-of? destination (rest districts))
-;;            (one-of? destination (rest (map :stop route)))))
-;;      lines)))
-
 ;;TODO: can be removed. For debugging only
 (defn- prn-ret [msg returnable]
   (do (println msg)
@@ -52,21 +40,22 @@
          (one-of? weekday days-of-line)))
      lines)))
 
-;; (defn- filter-by-from-centre [from-centre lines]
-;;   (filter (fn [{:keys [title] :as line}]
-;;             (let [line-from-centre (one-of? (first title)
-;;                                             ["keskusta" "kauppatori"])]
-;;               (cond
-;;                (true? from-centre) line-from-centre
-;;                (false? from-centre) (not line-from-centre)
-;;                :else true))) ;; do not drop lines if from-centre not set
-;;           lines))
+;;TODO perhaps refactor to make the intent clearer.
+;;     Also, consider taking varargs instead of just two fixed args
+(defn has-both? [seq x y]
+  "Checks if x and y found in seq in the correct order"
+  (->> seq
+       (partition-by #(not (= x %)))
+       rest
+       flatten
+       (one-of? y)))
 
-
-;;TODO check that from needs to be before destination
 (defn matches-path [from destination path]
-  (or (one-of? from (butlast path))
-      (one-of? destination (rest path))))
+  (cond (and from destination) (has-both? path from destination)
+        from (one-of? from (butlast path))
+        destination (one-of? destination (rest path))
+        :else false))
+
 
 (defn- filter-by-from-and-destination [from destination lines]
   "Filters lines by destination. Checks title, districts and route.
@@ -80,13 +69,11 @@
      lines)
     lines))
 
-
 (defn- lines-for [{:keys [numbers from destination weekday] :as request} data]
   (when (and request data)
        (->> data
             (filter-by-numbers numbers)
             (filter-by-from-and-destination from destination)
-            ;;(filter-by-destination destination)
             (filter-by-weekday weekday))))
 
 (defn- mins-from-midnight [time-str]

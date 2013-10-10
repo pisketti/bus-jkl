@@ -334,7 +334,7 @@
                  :districts ["qux" "meh"]
                  :route [{:stop "foo street"}]}])
 
-;; When neither :from or :destination given
+;; neither :from or :destination given
 
 (fact "Empty request (= no limitations) returns all lines"
       (lines-for {} line-data)
@@ -349,37 +349,59 @@
              found-line-data-many-lines)
   => [])
 
+;; :from given but no :destination
 
-;;TODO REMOVE ALL tests having :from-centre
-;;TODO write more tests for cases where both :from and :destination given
+(fact "Finds zero lines when no lines match :from"
+      (lines-for {:from "Nonexistent"} line-data) => [])
 
-;; When :from given but no :destination
+(fact "Finds all lines from Keskusta when number no number or destination given"
+      (lines-for {:from "Keskusta"} line-data)
+      => (contains-maps-having {:number "1"} {:number "3"}))
 
-;; (fact "Finds all lines from Keskusta when number no number or destination given"
-;;       (lines-for {:from "Keskusta"} line-data)
-;;       => (contains-maps-having {:number "1"} {:number "3"}))
+(fact "Finds a single line from Oz when only from given"
+  (lines-for {:from "Oz"} line-data)
+  => (contains-maps-having {:number "2"}))
 
-(fact "Finds a single line from city centre when title is written in varying case"
-  (lines-for {:from-centre true}
+(fact "Finds the corret line when title is written in varying case"
+  (lines-for {}
               [{:number "1"
                 :title ["kesKUSTA" "Oz"]
                 :districts ["FOO" "BAR"]
                 :route [{:stop "foo street"}]}])
   => (contains-maps-having {:number "1"}))
 
-(fact "Interpretes kauppatori as city centre as well"
-  (lines-for {:from-centre true}
-              [{:number "1"
-                :title ["Kauppatori" "Oz"]
-                :districts ["FOO" "BAR"]
-                :route [{:stop "foo street"}]}])
+;; Both :from and :destination given
+
+(fact "Finds the single matching line when :from and :destination found in title"
+  (lines-for
+   {:from "Keskusta" :destination "Keljo"}
+   [{:number "1" :title ["Keskusta" "Oz"] :districts ["a" "b"] :route [{:stop "X st"}]}
+    {:number "2" :title ["Oz" "Keskusta"] :districts ["b" "c" "d"] :route [{:stop "F st"}]}
+    {:number "3" :title ["Keskusta" "Keljo"] :districts ["x" "y"] :route [{:stop "Y st"}]}])
+  => (contains-maps-having {:number "3"}))
+
+(fact "Finds the single matching line given :from and :destination found in correct order"
+  (lines-for
+   {:from "Keskusta" :destination "Oz"}
+   [{:number "1" :title ["Foo" "Keskusta" "bar" "Oz" "Baz"]}
+    {:number "2" :title ["Baz" "Oz" "bar" "Keskusta" "Foo"]}])
   => (contains-maps-having {:number "1"}))
 
-;; (fact "Finds all lines NOT from city centre when number no number or destination given"
-;;   (lines-for {:from-centre false} line-data)
-;;   => (contains-maps-having {:number "2"}))
+;;TODO write more tests for cases where both :from and :destination given
+;;     eg. for districts and route
 
-;; Tests for choosing lines by :destination
+;;TODO find out why using nonexistent :from value in the browser
+;;     still returns 27 even though it should return no buses
+
+;;TODO perhaps implement support for interpreting kauppatori as keskusta and
+;;     and perhaps other special cases as well.
+;; (fact "Interpretes kauppatori as city centre as well"
+;;   (lines-for {:from "keskusta"}
+;;              [{:number "1" :title ["Kauppatori" "Oz"]}
+;;               {:number "2" :title ["foo" "bar"]}])
+;;   => (contains-maps-having {:number "1"}))
+
+;; :destination given but no :from
 
 (def dest-check-line-data
   [{:number "1"
