@@ -1,5 +1,5 @@
 (ns bus-jkl.core
-  (:use [clojure.string :only [split upper-case]]
+  (:use [clojure.string :only [split upper-case lower-case]]
         [clojure.pprint :only [pprint]]
         [clojure.tools.trace])
   (:require [bus-jkl.data :as data]
@@ -42,10 +42,10 @@
 
 ;;TODO perhaps refactor to make the intent clearer.
 ;;     Also, consider taking varargs instead of just two fixed args
-(defn has-both? [seq x y]
+(defn- has-both? [seq x y]
   "Checks if x and y found in seq in the correct order"
   (->> seq
-       (partition-by #(not (= x %)))
+       (partition-by #(not (= (lower-case x) (lower-case %))))
        rest
        flatten
        (one-of? y)))
@@ -195,7 +195,7 @@
 
 (defn- filter-needed-keys [request]
   (select-keys request
-               [:numbers :from-centre :destination
+               [:numbers :from :destination
                 :weekday :time :within :bus-count]))
 
 (defn- filter-return-fields [result return-fields]

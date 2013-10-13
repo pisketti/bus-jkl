@@ -363,35 +363,12 @@
   => (contains-maps-having {:number "2"}))
 
 (fact "Finds the corret line when title is written in varying case"
-  (lines-for {}
+  (lines-for {:from "keskusta"}
               [{:number "1"
                 :title ["kesKUSTA" "Oz"]
                 :districts ["FOO" "BAR"]
                 :route [{:stop "foo street"}]}])
   => (contains-maps-having {:number "1"}))
-
-;; Both :from and :destination given
-
-(fact "Finds the single matching line when :from and :destination found in title"
-  (lines-for
-   {:from "Keskusta" :destination "Keljo"}
-   [{:number "1" :title ["Keskusta" "Oz"] :districts ["a" "b"] :route [{:stop "X st"}]}
-    {:number "2" :title ["Oz" "Keskusta"] :districts ["b" "c" "d"] :route [{:stop "F st"}]}
-    {:number "3" :title ["Keskusta" "Keljo"] :districts ["x" "y"] :route [{:stop "Y st"}]}])
-  => (contains-maps-having {:number "3"}))
-
-(fact "Finds the single matching line given :from and :destination found in correct order"
-  (lines-for
-   {:from "Keskusta" :destination "Oz"}
-   [{:number "1" :title ["Foo" "Keskusta" "bar" "Oz" "Baz"]}
-    {:number "2" :title ["Baz" "Oz" "bar" "Keskusta" "Foo"]}])
-  => (contains-maps-having {:number "1"}))
-
-;;TODO write more tests for cases where both :from and :destination given
-;;     eg. for districts and route
-
-;;TODO find out why using nonexistent :from value in the browser
-;;     still returns 27 even though it should return no buses
 
 ;;TODO perhaps implement support for interpreting kauppatori as keskusta and
 ;;     and perhaps other special cases as well.
@@ -436,12 +413,64 @@
                          dest-check-line-data)
       => (contains-maps-having {:number "1"} {:number "3"}))
 
-;; Checking destination combining TITLE and DISTRICT and ROUTE
-
 (fact "Finds lines having destination in either TTILE, DISTRICT or ROUTE but not as the first item."
       (lines-for {:destination "viitaniemi"}
                          dest-check-line-data)
       => (contains-maps-having {:number "1"} {:number "2"} {:number "3"}))
+
+;; Both :from and :destination given
+
+(fact "Finds the single matching line when :from and :destination found in title"
+  (lines-for
+   {:from "Keskusta" :destination "Keljo"}
+   [{:number "1" :title ["Keskusta" "Oz"] :districts ["a" "b"] :route [{:stop "X st"}]}
+    {:number "2" :title ["Oz" "Keskusta"] :districts ["b" "c" "d"] :route [{:stop "F st"}]}
+    {:number "3" :title ["Keskusta" "Keljo"] :districts ["x" "y"] :route [{:stop "Y st"}]}])
+  => (contains-maps-having {:number "3"}))
+
+(fact "Finds the single matching line given :from and :destination found in correct order"
+  (lines-for
+   {:from "Keskusta" :destination "Oz"}
+   [{:number "1" :title ["Foo" "Keskusta" "bar" "Oz" "Baz"]}
+    {:number "2" :title ["Baz" "Oz" "bar" "Keskusta" "Foo"]}])
+  => (contains-maps-having {:number "1"}))
+
+(fact "Finds the corret line when title is written in varying case"
+  (lines-for {:from "keskusta" :destination "oz"}
+              [{:number "1"
+                :title ["kesKUSTA" "Oz"]
+                :districts ["FOO" "BAR"]
+                :route [{:stop "foo street"}]}])
+  => (contains-maps-having {:number "1"}))
+
+;; Checking destination by from and destaintion combining TITLE and DISTRICT and ROUTE
+
+(let [data [{:number "1"
+             :title ["Keskusta" "viitaniemi" "Oz"]
+             :districts ["harju" "oz"]
+             :route [{:stop "a st"}{:stop "b st"}{:stop "dest st"}]}
+            {:number "2"
+             :title ["Oz" "Keltinmäki"]
+             :districts ["oz" "harju" "viitaniemi" "valhalla"]
+             :route [{:stop "dest st"}{:stop "e st"}{:stop "f st"}]}
+            {:number "3"
+             :title ["Keskusta" "Keltinmäki" "Mustalampi"]
+             :districts ["valhalla" "harju"]
+             :route [{:stop "a st"}{:stop "b st"}{:stop "c st"}]}]]
+
+  (fact "Finds lines by :from and :destination using TITLE."
+        (lines-for {:from "keskusta" :destination "viitaniemi"} data)
+        => (contains-maps-having {:number "1"}))
+
+  (fact "Finds lines by :from and :destination using DISTRICTS."
+        (lines-for {:from "harju" :destination "valhalla"} data)
+        => (contains-maps-having {:number "2"}))
+
+  (fact "Finds lines by :from and :destination using ROUTE"
+        (lines-for {:from "a st" :destination "c st"} data)
+        => (contains-maps-having {:number "3"})))
+
+;; Test filtering lines by :weekday
 
 (def day-check-line-data
   [{:number "1"
@@ -482,6 +511,28 @@
       => (contains-maps-having
           {:number "2"}{:number "3"}))
 
+
+;;-----------------------------------------------
+;; has-both?
+;;-----------------------------------------------
+
+(def has-both? (ns-resolve 'bus-jkl.core 'has-both?))
+
+(fact "has-both? returns falsy when seq is empty"
+    (has-both? [] :a :b) => falsey)
+
+(fact "has-both? returns falsey when seq has one but not the other"
+    (has-both? ["a" "b"] "a" "NOPE") => falsey
+    (has-both? ["a" "b"] "NOPE" "b") => falsey)
+
+(fact "has-both? returns falsey when seq has both items but in the wrong order"
+    (has-both? ["a" "b"] "b" "a") => falsey)
+
+(fact "has-both? returns truthy when seq has both items in given order"
+    (has-both? ["a" "b"] "a" "b") => truthy)
+
+(fact "has-both? returns truthy when seq has both items in given order but in different case than seq"
+    (has-both? ["AbC" "xYz"] "abc" "XYZ") => truthy)
 
 ;;-----------------------------------------------
 ;; weekday-from
